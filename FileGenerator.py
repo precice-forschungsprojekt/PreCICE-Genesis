@@ -5,7 +5,7 @@ from controller_utils.ui_struct.UI_UserInput import UI_UserInput
 from controller_utils.myutils.UT_PCErrorLogging import UT_PCErrorLogging
 from controller_utils.precice_struct import PS_PreCICEConfig
 from generation_utils.AdapterConfigGenerator import AdapterConfigGenerator
-from format_precice_config import PrettyPrinter
+from generation_utils.format_precice_config import PrettyPrinter
 import yaml
 import argparse
 
@@ -91,10 +91,106 @@ class FileGenerator:
         pass
     
     def _generate_README(self) -> None:
-        """Generates the README.md file"""
-        self._generate_static_files(target=self.structure.README,
-                                    name="README.md")
+        """Generates the README.md file with dynamic content based on simulation configuration"""
+        # Comprehensive solver documentation links
+        SOLVER_DOCS = {
+            # CFD Solvers
+            'openfoam': 'https://www.openfoam.com/documentation',
+            'su2': 'https://su2code.github.io/docs/home/',
+            'foam-extend': 'https://sourceforge.net/p/foam-extend/',
+            
+            # Structural Solvers
+            'calculix': 'https://www.calculix.de/',
+            'elmer': 'https://www.elmersolver.com/documentation/',
+            'code_aster': 'https://www.code-aster.org/V2/doc/default/en/index.php',
+            
+            # Other Solvers
+            'fenics': 'https://fenicsproject.org/docs/',
+            'dealii': 'https://dealii.org/current/doxygen/deal.II/index.html',
+            
+            # Fallback
+            'default': 'https://precice.org/adapter-list.html'
+        }
 
+        # Read the template README with explicit UTF-8 encoding
+        with open(Path(__file__).parent / "templates" / "template_README.md", 'r', encoding='utf-8') as template_file:
+            readme_content = template_file.read()
+
+        # Extract participants and their solvers
+        participants_list = []
+        solvers_list = []
+        solver_links = {}
+        original_solver_names = {}
+
+        # Ensure participants exist before processing
+        if not hasattr(self.user_ui, 'participants') or not self.user_ui.participants:
+            self.logger.warning("No participants found. Using default placeholders.")
+            participants_list = ["DefaultParticipant"]
+            solvers_list = ["DefaultSolver"]
+            original_solver_names = {"defaultparticipant": "DefaultSolver"}
+        else:
+            for participant_name, participant_info in self.user_ui.participants.items():
+                # Preserve original solver name
+                original_solver_name = getattr(participant_info, 'solverName', 'UnknownSolver')
+                solver_name = original_solver_name.lower()
+                
+                participants_list.append(participant_name)
+                solvers_list.append(original_solver_name)
+                original_solver_names[participant_name.lower()] = original_solver_name
+                
+                # Get solver documentation link, use default if not found
+                solver_links[solver_name] = SOLVER_DOCS.get(solver_name, SOLVER_DOCS['default'])
+
+        # Determine coupling strategy (you might want to extract this from topology.yaml)
+        coupling_strategy = "Partitioned" if len(participants_list) > 1 else "Single Solver"
+
+        # Replace placeholders
+        readme_content = readme_content.replace("{PARTICIPANTS_LIST}", "\n  ".join(f"- {p}" for p in participants_list))
+        readme_content = readme_content.replace("{SOLVERS_LIST}", "\n  ".join(f"- {s}" for s in solvers_list))
+        readme_content = readme_content.replace("{COUPLING_STRATEGY}", coupling_strategy)
+        
+        # Explicitly replace solver-specific placeholders
+        readme_content = readme_content.replace("{SOLVER1_NAME}", solvers_list[0] if solvers_list else "Solver1")
+        readme_content = readme_content.replace("{SOLVER2_NAME}", solvers_list[1] if len(solvers_list) > 1 else "Solver2")
+        
+        # Generate adapter configuration paths for all participants
+        adapter_config_paths = []
+        
+        for participant in participants_list:
+            # Find the corresponding solver name for this participant
+            solver_name = original_solver_names.get(participant.lower(), 'solver')
+            adapter_config_paths.append(f"- **{participant}**: `{participant}-{solver_name}/adapter-config.json`")
+        
+        # Replace adapter configuration section
+        readme_content = readme_content.replace(
+            "- **Adapter Configuration**: `{PARTICIPANT_NAME}/adapter-config.json`", 
+            "**Adapter Configurations**:\n" + "\n".join(adapter_config_paths)
+        )
+        
+        # Explicitly replace solver links
+        readme_content = readme_content.replace(
+            "[Link1]", 
+            f"[{solvers_list[0] if solvers_list else 'Solver1'}]({solver_links.get(solvers_list[0].lower(), '#') if solvers_list else '#'})"
+        )
+        readme_content = readme_content.replace(
+            "[Link2]", 
+            f"[{solvers_list[1] if len(solvers_list) > 1 else 'Solver2'}]({solver_links.get(solvers_list[1].lower(), '#') if len(solvers_list) > 1 else '#'})"
+        )
+
+        # Generate comprehensive solver links
+        solver_links_section = "**Solvers Links and Names**:\n"
+        for solver_name, solver_link in solver_links.items():
+            solver_links_section += f"- {original_solver_names.get(solver_name, solver_name.capitalize())}: [{solver_name.upper()}]({solver_link})\n"
+        
+        # Replace the placeholder with the generated solver links
+        readme_content = readme_content.replace("[Solvers Links and Names]", solver_links_section)
+
+        # Write the updated README with UTF-8 encoding
+        with open(self.structure.README, 'w', encoding='utf-8') as readme_file:
+            readme_file.write(readme_content)
+
+        self.logger.success(f"Generated README at {self.structure.README}")
+    
     def _generate_run(self, run_sh: Path) -> None:
         """Generates the run.sh file
             :param run_sh: Path to the run.sh file"""
@@ -117,8 +213,8 @@ class FileGenerator:
     def generate_level_0(self) -> None:
         """Fills out the files of level 0 (everything in the root folder)."""
         self._generate_clean()
-        self._generate_README()
         self._generate_precice_config()
+        self._generate_README()
     
     def _extract_participants(self) -> list[str]:
         """Extracts the participants from the topology.yaml file."""
@@ -160,9 +256,7 @@ class FileGenerator:
             self.logger.error("An error occurred during XML prettification: ", prettifyException)
             
         
-    
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Takes topology.yaml files as input and writes out needed files to start the precice.")
     parser.add_argument(
         "-f", "--input-file", 
@@ -188,3 +282,6 @@ if __name__ == "__main__":
     # Format the generated preCICE configuration
 
     fileGenerator.format_precice_config()
+
+if __name__ == "__main__":
+    main()

@@ -3,9 +3,9 @@
     time-window-size: 1
     relative-accuracy: 1e-4
 participants:
-    Solid: Solid
-    Fluid-Inner: Fluid-Inner
-    Fluid-Outer: Fluid-Outer
+    Solid: Calculix
+    Fluid-Inner: Openfoam
+    Fluid-Outer: Openfoam
 exchanges:
     - from: Solid
       from-patch: Solid-to-Fluid-Inner

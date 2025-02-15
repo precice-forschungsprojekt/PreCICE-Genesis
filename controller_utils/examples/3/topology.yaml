@@ -31,4 +31,28 @@ exchanges:
       to-patch: interface
       data: Heat-Transfer-Coefficient-Fluid-Inner
       type: strong
-        
+exchanges:
+    - from: Solid
+      from-patch: interface
+      to: Fluid-Outer
+      to-patch: surface
+      data: Sink-Temperature-Solid
+      type: weak
+    - from: Solid
+      from-patch: surface
+      to: Fluid-Outer
+      to-patch: interface
+      data: Heat-Transfer-Coefficient-Solid
+      type: strong
+    - from: Fluid-Outer
+      from-patch: surface
+      to: Solid
+      to-patch: interface
+      data: Sink-Temperature-Fluid-Outer
+      type: strong
+    - from: Fluid-Outer
+      from-patch: surface
+      to: Solid
+      to-patch: interface
+      data: Heat-Transfer-Coefficient-Fluid-Outer
+      type: strong

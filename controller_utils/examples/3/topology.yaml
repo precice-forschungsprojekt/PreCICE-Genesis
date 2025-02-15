@@ -1,0 +1,34 @@
+coupling-scheme:
+    max-time: 1e-1
+    time-window-size: 1e-3
+    relative-accuracy: 1e-4
+participants:
+    Fluid-Inner: OpenFOAM
+    Fluid-Outer: OpenFOAM
+    Solid: Calculix
+exchanges:
+    - from: Solid
+      from-patch: interface
+      to: Fluid-Inner
+      to-patch: surface
+      data: Sink-Temperature-Solid
+      type: weak
+    - from: Solid
+      from-patch: surface
+      to: Fluid-Inner
+      to-patch: interface
+      data: Heat-Transfer-Coefficient-Solid
+      type: strong
+    - from: Fluid-Inner
+      from-patch: surface
+      to: Solid
+      to-patch: interface
+      data: Sink-Temperature-Fluid-Inner
+      type: strong
+    - from: Fluid-Inner
+      from-patch: surface
+      to: Solid
+      to-patch: interface
+      data: Heat-Transfer-Coefficient-Fluid-Inner
+      type: strong
+        

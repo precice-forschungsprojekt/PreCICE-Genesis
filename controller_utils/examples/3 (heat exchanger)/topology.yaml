@@ -1,0 +1,57 @@
+﻿coupling-scheme:
+    max-time: 500
+    time-window-size: 1
+    relative-accuracy: 1e-4
+participants:
+    Solid: Solid
+    Fluid-Inner: Fluid-Inner
+    Fluid-Outer: Fluid-Outer
+exchanges:
+    - from: Solid
+      from-patch: Solid-to-Fluid-Inner
+      to: Fluid-Inner
+      to-patch: Fluid-Inner-to-Solid
+      data: Sink-Temperature-Solid
+      type: strong
+    - from: Solid
+      from-patch: Solid-to-Fluid-Inner
+      to: Fluid-Inner
+      to-patch: Fluid-Inner-to-Solid
+      data: Heat-Transfer-Coefficient-Solid
+      type: strong
+    - from: Fluid-Inner
+      from-patch: Fluid-Inner-to-Solid
+      to: Solid
+      to-patch: Solid-to-Fluid-Inner
+      data: Sink-Temperature-Fluid-Inner
+      type: strong
+    - from: Fluid-Inner
+      from-patch: Fluid-Inner-to-Solid
+      to: Solid
+      to-patch: Solid-to-Fluid-Inner
+      data: Heat-Transfer-Coefficient-Fluid-Inner
+      type: strong
+    - from: Solid
+      from-patch: Solid-to-Fluid-Outer
+      to: Fluid-Outer
+      to-patch: Fluid-Outer-to-Solid
+      data: Sink-Temperature-Solid
+      type: strong
+    - from: Solid
+      from-patch: Solid-to-Fluid-Outer
+      to: Fluid-Outer
+      to-patch: Fluid-Outer-to-Solid
+      data: Heat-Transfer-Coefficient-Solid
+      type: strong
+    - from: Fluid-Outer
+      from-patch: Fluid-Outer-to-Solid
+      to: Solid
+      to-patch: Solid-to-Fluid-Outer
+      data: Sink-Temperature-Fluid-Outer
+      type: strong
+    - from: Fluid-Outer
+      from-patch: Fluid-Outer-to-Solid
+      to: Solid
+      to-patch: Solid-to-Fluid-Outer
+      data: Heat-Transfer-Coefficient-Fluid-Outer
+      type: strong

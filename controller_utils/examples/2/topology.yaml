@@ -4,12 +4,9 @@ coupling-scheme:
     relative-accuracy: 1e-4  
 
 participants:
-    Fluid: 
-        solver: OpenFOAM
-        dimensionality: 2
-    Solid: 
-        solver: FEniCS
-        dimensionality: 2
+    Fluid: OpenFOAM , 2
+    Solid: FEniCS , 2
+
 
 exchanges:
     - from: Fluid

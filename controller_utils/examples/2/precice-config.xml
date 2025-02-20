@@ -23,8 +23,10 @@
   <participant name="Fluid">
     <provide-mesh name="Fluid-Mesh" />
     <receive-mesh name="Solid-Mesh" from="Solid" />
+
     <read-data name="Heat-Flux" mesh="Fluid-Mesh" />
     <write-data name="Temperature" mesh="Fluid-Mesh" />
+
     <mapping:nearest-neighbor
       direction="read"
       from="Solid-Mesh"
@@ -34,15 +36,18 @@
 
   <participant name="Solid">
     <export:vtk directory="precice-exports" />
+
+    <read-data name="Temperature" mesh="Solid-Mesh" />
+    <write-data name="Heat-Flux" mesh="Solid-Mesh" />
+
     <receive-mesh name="Fluid-Mesh" from="Fluid" />
     <provide-mesh name="Solid-Mesh" />
+
     <mapping:nearest-neighbor
       direction="read"
       from="Fluid-Mesh"
       to="Solid-Mesh"
-      constraint="consistent" />
-    <read-data name="Temperature" mesh="Solid-Mesh" />
-    <write-data name="Heat-Flux" mesh="Solid-Mesh" />
+      constraint="consistent" />      
   </participant>
 
   <m2n:sockets acceptor="Fluid" connector="Solid" exchange-directory=".." />
@@ -51,13 +56,18 @@
     <time-window-size value="0.01" />
     <max-time value="1" />
     <max-iterations value="30" />
+
     <participants first="Fluid" second="Solid" />
+
     <exchange data="Temperature" mesh="Fluid-Mesh" from="Fluid" to="Solid" />
     <exchange data="Heat-Flux" mesh="Solid-Mesh" from="Solid" to="Fluid" />
+
     <relative-convergence-measure limit="1.0e-5" data="Temperature" mesh="Fluid-Mesh" />
+
     <acceleration:aitken>
       <data mesh="Solid-Mesh" name="Heat-Flux" />
       <initial-relaxation value="0.5" />
     </acceleration:aitken>
+    
   </coupling-scheme:serial-implicit>
 </precice-configuration>

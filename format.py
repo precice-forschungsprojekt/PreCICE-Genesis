@@ -1,11 +1,12 @@
-#!/usr/bin/env python3
+#! /usr/bin/env python3
+
 from lxml import etree
 import itertools
+import argparse
 import sys
 import io
 import shutil
 
-# Global list of valid convergence measure tags
 CONVERGENCE_MEASURE_TAGS = ['relative-convergence-measure', 'absolute-convergence-measure', 'absolute-or-relative-convergence-measure']
 
 TOP_LEVEL_ORDER = {
@@ -372,67 +373,69 @@ class PrettyPrinter():
                 self.print()
 
 
-    @staticmethod
-    def parse_xml(content):
-        """
-        Parse XML content into an lxml ElementTree, with recovery and whitespace cleanup.
-        
-        Parameters:
-          content (bytes): The XML content in bytes.
-        
-        Returns:
-          An lxml ElementTree object.
-        """
-        parser = etree.XMLParser(recover=True, remove_comments=False, remove_blank_text=True)
-        return etree.fromstring(content, parser).getroottree()
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'files',
+        nargs='+',
+        type=str,
+        help="The XML configuration files."
+    )
+    return parser.parse_args()
 
-    def prettify_file(self, file_path):
-        """
-        Prettify the XML file at the given path and overwrite the file with the prettified content.
 
-        Parameters:
-          file_path (str): Path to the XML file.
-        
-        Returns:
-          bool: True if the file was processed (even if no changes were made), False if an error occurred.
-        """
+def parseXML(content):
+    p = etree.XMLParser(recover=True,
+                        remove_comments=False,
+                        remove_blank_text=True)
+    return etree.fromstring(content, p).getroottree()
+
+
+def example():
+    return parseXML(open('./BB-sockets-explicit-twoway.xml', 'r').read())
+
+
+def main():
+    args = parse_args()
+
+    modified = False
+    failed = False
+    for filename in args.files:
+        content = None
         try:
-            # Open and read the file as bytes.
-            with open(file_path, 'rb') as xml_file:
+            with open(filename, 'rb') as xml_file:
                 content = xml_file.read()
         except Exception as e:
-            print(f"Unable to open file: \"{file_path}\"")
+            print(f"Unable to open file: \"{filename}\"")
             print(e)
-            return False
+            failed = True
+            continue
 
+        xml = None
         try:
-            # Parse the XML content using the static method.
-            xml_tree = PrettyPrinter.parse_xml(content)
+            xml = parseXML(content)
         except Exception as e:
-            print(f"Error occurred while parsing file: \"{file_path}\"")
+            print(f"Error occured while parsing file: \"{filename}\"")
             print(e)
-            return False
+            failed = True
+            continue
 
-        # Create an in-memory text stream to hold the prettified XML.
         buffer = io.StringIO()
-        # Use a temporary PrettyPrinter instance with the buffer as output.
-        temp_printer = PrettyPrinter(stream=buffer, indent=self.indent,
-                                     maxwidth=self.maxwidth, maxgrouplevel=self.maxgrouplevel)
-        temp_printer.printRoot(xml_tree)
+        printer = PrettyPrinter(stream=buffer)
+        printer.printRoot(xml)
 
-        # Get the prettified content from the buffer.
-        new_content = buffer.getvalue()
-        # Compare with the original content (decoded from bytes).
-        if new_content != content.decode("utf-8"):
-            try:
-                # Overwrite the original file with the prettified content.
-                with open(file_path, "w") as xml_file:
-                    buffer.seek(0)
-                    shutil.copyfileobj(buffer, xml_file)
-            except Exception as e:
-                print(f"Failed to write prettified content to file: \"{file_path}\"")
-                print(e)
-                return False
-        else:
-            print(f"No changes required for file: \"{file_path}\"")
-        return True
+        if buffer.getvalue() != content.decode("utf-8"):
+            print(f"Reformatting file: \"{filename}\"")
+            modified = True
+            with open(filename, "w") as xml_file:
+                buffer.seek(0)
+                shutil.copyfileobj(buffer, xml_file)
+
+    if failed: return 1
+
+    if modified: return 2
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())

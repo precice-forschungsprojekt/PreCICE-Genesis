@@ -3,10 +3,9 @@ coupling-scheme:
     time-window-size: 1e-3  
     relative-accuracy: 1e-4  
 
-
 participants:
     Fluid: OpenFOAM  
-    Solid: FEniCS    
+    Solid: FEniCS
 
 exchanges:
     - from: Fluid

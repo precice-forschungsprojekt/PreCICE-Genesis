@@ -59,12 +59,20 @@ class UI_UserInput(object):
             self.participants = {}
             participants_data = etree["participants"]
             for participant_name, solver_info in participants_data.items():
+                if ":" in participant_name:
+                    name, solver_name = participant_name.split(":", 1)
+                    name = name.strip()
+                    solver_name = solver_name.strip()
+                else:
+                    name = participant_name
+                    solver_name = solver_info["solver"]
                 new_participant = UI_Participant()
-                new_participant.name = participant_name
-                new_participant.solverName = solver_info
+                new_participant.name = name
+                new_participant.solverName = solver_name
                 new_participant.solverType = ""  # Placeholder; adjust if solver-type info available
+                new_participant.dimensionality = solver_info.get("dimensionality", 3)
                 new_participant.list_of_couplings = []
-                self.participants[participant_name] = new_participant
+                self.participants[name] = new_participant
 
             # --- Parse couplings from exchanges ---
             exchanges_list = etree["exchanges"]

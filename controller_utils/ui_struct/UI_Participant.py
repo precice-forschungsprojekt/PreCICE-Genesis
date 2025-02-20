@@ -10,7 +10,6 @@ class UI_Participant(object):
         self.name = ""
         self.solverName = ""
         self.solverType = ""
-        self.dimensionality = 3 # default is 3D
         self.list_of_couplings = [] # list of empty couplings
         self.solver_domain = "" # this shows if this participant is a fluid or structure or else solver
         pass
@@ -22,9 +21,6 @@ class UI_Participant(object):
             self.name = participant_name
             self.solverName = etree["solver"]
             self.solverType = etree["solver-type"]
-            if "dimensionality" in etree:
-                self.dimensionality = etree["dimensionality"]
-                mylog.rep_error("!!! Dimensionality = ", self.dimensionality)
         except:
             mylog.rep_error("Error in YAML initialization of the Participant.")
         pass

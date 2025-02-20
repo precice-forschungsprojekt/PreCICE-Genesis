@@ -37,11 +37,11 @@
   <participant name="Solid">
     <export:vtk directory="precice-exports" />
 
-    <read-data name="Temperature" mesh="Solid-Mesh" />
-    <write-data name="Heat-Flux" mesh="Solid-Mesh" />
-
-    <receive-mesh name="Fluid-Mesh" from="Fluid" />
     <provide-mesh name="Solid-Mesh" />
+    <receive-mesh name="Fluid-Mesh" from="Fluid" />
+
+    <write-data name="Heat-Flux" mesh="Solid-Mesh" />
+    <read-data name="Temperature" mesh="Solid-Mesh" />
 
     <mapping:nearest-neighbor
       direction="read"
@@ -68,6 +68,6 @@
       <data mesh="Solid-Mesh" name="Heat-Flux" />
       <initial-relaxation value="0.5" />
     </acceleration:aitken>
-    
+
   </coupling-scheme:serial-implicit>
 </precice-configuration>

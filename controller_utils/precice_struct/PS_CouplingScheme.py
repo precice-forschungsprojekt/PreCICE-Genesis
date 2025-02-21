@@ -129,11 +129,12 @@ class PS_CouplingScheme(object):
             if coupled_mesh_name is None:
                 print("No coupled mesh found for quantity " + q_name + " between solvers " + solver.name + " and " + other_solver_for_coupling.name)
 
-            print(solver.name + " provides: " + str([q.source_mesh_name for q in solver.quantities_write.values() if q.source_solver == solver]))
-            print(solver.name + " receives: " + str([q.source_mesh_name for q in solver.quantities_read.values() if q.source_solver != solver]))
-            print(other_solver_for_coupling.name + " provides: " + str([q.source_mesh_name for q in other_solver_for_coupling.quantities_write.values() if q.source_solver == other_solver_for_coupling]))
-            print(other_solver_for_coupling.name + " receives: " + str([q.source_mesh_name for q in other_solver_for_coupling.quantities_read.values() if q.source_solver != other_solver_for_coupling]))
-
+            # Use the provide and receive meshes from the config
+            print(solver.name + " provides: " + str(config.solver_provide_meshes[solver.name]))
+            print(solver.name + " receives: " + str(config.solver_receive_meshes[solver.name]))
+            
+            print(other_solver_for_coupling.name + " provides: " + str(config.solver_provide_meshes[other_solver_for_coupling.name]))
+            print(other_solver_for_coupling.name + " receives: " + str(config.solver_receive_meshes[other_solver_for_coupling.name]))
 
             # the from and to attributes
             from_s = "___"

@@ -95,25 +95,51 @@ class PS_CouplingScheme(object):
 
             # Determine the coupled mesh that both participants share
             coupled_mesh_name = None
+            
+            # Debug: Print out all quantities for both solvers
+            print(f"Debugging quantity: {q_name}")
+            print(f"{solver.name} quantities read: {list(solver.quantities_read.keys())}")
+            print(f"{solver.name} quantities write: {list(solver.quantities_write.keys())}")
+            print(f"{other_solver_for_coupling.name} quantities read: {list(other_solver_for_coupling.quantities_read.keys())}")
+            print(f"{other_solver_for_coupling.name} quantities write: {list(other_solver_for_coupling.quantities_write.keys())}")
+            
+            # First, try to find the coupled mesh from the quantity's perspective
             for mesh in solver.meshes:
-                # Check if this mesh is a potential coupled mesh
+                # Check if this mesh is used in the current quantity
                 if mesh in other_solver_for_coupling.meshes:
-                    # Verify the mesh status for both solvers
-                    if (self.is_mesh_provided(solver, mesh) and 
-                        self.is_mesh_received(other_solver_for_coupling, mesh)) or \
-                       (self.is_mesh_received(solver, mesh) and 
-                        self.is_mesh_provided(other_solver_for_coupling, mesh)):
+                    # Verify the mesh is part of the current quantity's exchange
+                    for q in [solver.quantities_read.get(q_name), solver.quantities_write.get(q_name)]:
+                        if q and q.source_mesh_name == mesh:
+                            coupled_mesh_name = mesh
+                            break
+                    
+                    # If we found a coupled mesh, break the outer loop
+                    if coupled_mesh_name:
+                        break
+            
+            # If no coupled mesh found, try a more comprehensive search
+            if coupled_mesh_name is None:
+                for mesh in solver.meshes:
+                    if mesh in other_solver_for_coupling.meshes:
                         coupled_mesh_name = mesh
                         break
-
-            if coupled_mesh_name is None:
-                print("No coupled mesh found for quantity " + q_name + " between solvers " + solver.name + " and " + other_solver_for_coupling.name)
             
-            print(solver.name + " provides: " + str([m for m in solver.meshes if self.is_mesh_provided(solver, m)]))
-            print(solver.name + " receives: " + str([m for m in solver.meshes if self.is_mesh_received(solver, m)]))
-            print(other_solver_for_coupling.name + " provides: " + str([m for m in other_solver_for_coupling.meshes if self.is_mesh_provided(other_solver_for_coupling, m)]))
-            print(other_solver_for_coupling.name + " receives: " + str([m for m in other_solver_for_coupling.meshes if self.is_mesh_received(other_solver_for_coupling, m)]))
-
+            # Additional detailed debugging
+            if coupled_mesh_name is None:
+                print(f"No coupled mesh found for quantity {q_name}")
+                print(f"{solver.name} meshes: {solver.meshes}")
+                print(f"{other_solver_for_coupling.name} meshes: {other_solver_for_coupling.meshes}")
+                
+                # Print detailed quantity information
+                print("\nDetailed Quantity Information:")
+                for q in [solver.quantities_read.get(q_name), solver.quantities_write.get(q_name)]:
+                    if q:
+                        print(f"Quantity source mesh: {q.source_mesh_name}")
+                        print(f"Quantity source solver: {q.source_solver.name}")
+                        print(f"Quantity list of solvers: {list(q.list_of_solvers.keys())}")
+                
+                print("########################################")
+                continue  # Skip this iteration if no coupled mesh is found
 
             # the from and to attributes
             from_s = "___"
@@ -121,7 +147,6 @@ class PS_CouplingScheme(object):
             exchange_mesh_name = q.source_mesh_name
             
             if coupled_mesh_name:
-                print("########################################")
                 if solver.name != simple_solver.name:
                     from_s = solver.name
                     to_s = simple_solver.name
@@ -153,27 +178,41 @@ class PS_CouplingScheme(object):
     def is_mesh_provided(self, solver, mesh_name):
         """
         Determine if a mesh is provided by the solver.
-        A mesh is considered provided if it's in the solver's meshes list 
-        and is not received from another solver.
+        A mesh is considered provided if:
+        1. It's used as a mesh for write quantities, OR
+        2. It's the solver's own mesh and not used as a source for read quantities
         """
         # Check if the mesh is in the solver's meshes
         if mesh_name not in solver.meshes:
             return False
         
-        # Check if this mesh is used as a source mesh for any read quantities
-        for q_name in solver.quantities_read.values():
-            if q_name.source_mesh_name == mesh_name:
+        # Check if this mesh is used for writing quantities
+        for q_name, q in solver.quantities_write.items():
+            if q.source_mesh_name == mesh_name:
+                return True
+        
+        # If no write quantities use this mesh, check read quantities
+        for q_name, q in solver.quantities_read.items():
+            if q.source_mesh_name == mesh_name:
                 return False
         
+        # If no quantities reference this mesh, consider it provided
         return True
 
     def is_mesh_received(self, solver, mesh_name):
         """
         Determine if a mesh is received by the solver from another solver.
-        A mesh is considered received if it's used as a source mesh for read quantities.
+        A mesh is considered received if:
+        1. It's used as a source mesh for read quantities
+        2. It's not the primary mesh for write quantities
         """
-        for q_name in solver.quantities_read.values():
-            if q_name.source_mesh_name == mesh_name:
+        # Check if the mesh is in the solver's meshes
+        if mesh_name not in solver.meshes:
+            return False
+        
+        # Check if this mesh is used as a source for read quantities
+        for q_name, q in solver.quantities_read.items():
+            if q.source_mesh_name == mesh_name:
                 return True
         
         return False

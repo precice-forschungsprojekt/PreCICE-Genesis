@@ -95,7 +95,12 @@ class PS_CouplingScheme(object):
 
             # Determine the coupled mesh that both participants share
             coupled_mesh_name = None
+
+            print("Current solver " + solver.name + " meshes: " + str(solver.meshes))
+            print("Other solver " + other_solver_for_coupling.name + " meshes: " + str(other_solver_for_coupling.meshes))
+
             for mesh in solver.meshes:
+                print("Current mesh: " + mesh)
                 # Check if this mesh is shared by both solvers
                 if mesh in other_solver_for_coupling.meshes:
                     # Use the provide and receive meshes from the config

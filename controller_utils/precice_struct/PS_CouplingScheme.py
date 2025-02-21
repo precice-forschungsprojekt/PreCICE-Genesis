@@ -97,19 +97,27 @@ class PS_CouplingScheme(object):
             from_s = "___"
             to_s = "__"
             exchange_mesh_name = q.source_mesh_name
+            
+            # Determine the coupled mesh that both participants share
+            coupled_mesh_name = None
+            for mesh in solver.meshes:
+                if mesh in other_solver_for_coupling.meshes:
+                    coupled_mesh_name = mesh
+                    break
+            
             if solver.name != simple_solver.name:
                 from_s = solver.name
                 to_s = simple_solver.name
-                exchange_mesh_name = other_mesh_name
+                exchange_mesh_name = coupled_mesh_name or other_mesh_name
             else:
                 from_s = solver.name
                 to_s = other_solver_for_coupling.name
+                exchange_mesh_name = coupled_mesh_name or q.source_mesh_name
 
-            # TODO: the mesh must be the coupled mesh that both participant have
-            # print (" size =" , len( q.list_of_solvers ) )
             e = etree.SubElement(coupling_scheme, "exchange", data=q_name, mesh=exchange_mesh_name
                                  ,from___ = from_s, to=to_s)
-            # TODO: here the oposite from above
+            
+            # Use the same mesh for the relative convergence measure
             if relative_conv_str != "":
                 c = etree.SubElement(coupling_scheme, "relative-convergence-measure",
                                  limit=relative_conv_str, mesh=exchange_mesh_name

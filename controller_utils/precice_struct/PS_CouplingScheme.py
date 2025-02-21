@@ -96,20 +96,7 @@ class PS_CouplingScheme(object):
             # the from and to attributes
             from_s = solver.name
             to_s = other_solver_for_coupling.name
-
-            # Determine the correct mesh name based on the exchange
-            exchange_mesh_name = None
-            
-            # Find the mesh for the 'to' solver in the exchange
-            to_solver_mesh = None
-            for oq in q.list_of_solvers:
-                solver_obj = q.list_of_solvers[oq]
-                if solver_obj.name == to_s:
-                    to_solver_mesh = list(solver_obj.meshes)[0]
-                    break
-            
-            # Use the 'to' solver's mesh for the exchange
-            exchange_mesh_name = to_solver_mesh or q.source_mesh_name
+            exchange_mesh_name = other_mesh_name if solver.name == simple_solver.name else q.source_mesh_name
 
             e = etree.SubElement(coupling_scheme, "exchange", data=q_name, mesh=exchange_mesh_name,
                                 from___=from_s, to=to_s)

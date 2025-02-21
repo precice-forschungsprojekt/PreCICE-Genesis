@@ -6,7 +6,7 @@ participants:
     Fluid-Inner: OpenFOAM
     Fluid-Outer: OpenFOAM
     Solid: Calculix
-exchanges:
+exchanges-fluid-inner:
     - from: Solid
       from-patch: interface
       to: Fluid-Inner
@@ -31,7 +31,7 @@ exchanges:
       to-patch: interface
       data: Heat-Transfer-Coefficient-Fluid-Inner
       type: strong
-exchanges:
+exchanges-fluid-outer:
     - from: Solid
       from-patch: interface
       to: Fluid-Outer

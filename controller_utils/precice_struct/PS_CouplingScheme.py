@@ -109,6 +109,10 @@ class PS_CouplingScheme(object):
             if coupled_mesh_name is None:
                 print("No coupled mesh found for quantity " + q_name + " between solvers " + solver.name + " and " + other_solver_for_coupling.name)
             
+            print(solver.name + " reads: " + str([q.instance_name for q in solver.quantities_read.values()]))
+            print(solver.name + " writes: " + str([q.instance_name for q in solver.quantities_write.values()]))
+            
+
             print(solver.name + " provides: " + str([m for m in solver.meshes if self.is_mesh_provided(solver, m)]))
             print(solver.name + " receives: " + str([m for m in solver.meshes if self.is_mesh_received(solver, m)]))
             print(other_solver_for_coupling.name + " provides: " + str([m for m in other_solver_for_coupling.meshes if self.is_mesh_provided(other_solver_for_coupling, m)]))

@@ -98,27 +98,11 @@ class PS_CouplingScheme(object):
             for mesh in solver.meshes:
                 # Check if this mesh is shared by both solvers
                 if mesh in other_solver_for_coupling.meshes:
-                    # Directly check mesh provide/receive status using internal data structures
-                    is_solver_providing_mesh = any(
-                        q.source_mesh_name == mesh 
-                        for q in solver.quantities_write.values() 
-                        if q.source_solver == solver
-                    )
-                    is_other_solver_receiving_mesh = any(
-                        q.source_mesh_name == mesh 
-                        for q in other_solver_for_coupling.quantities_read.values() 
-                        if q.source_solver == solver
-                    )
-                    is_solver_receiving_mesh = any(
-                        q.source_mesh_name == mesh 
-                        for q in solver.quantities_read.values() 
-                        if q.source_solver == other_solver_for_coupling
-                    )
-                    is_other_solver_providing_mesh = any(
-                        q.source_mesh_name == mesh 
-                        for q in other_solver_for_coupling.quantities_write.values() 
-                        if q.source_solver == other_solver_for_coupling
-                    )
+                    # Use the provide and receive meshes from the config
+                    is_solver_providing_mesh = mesh in config.solver_provide_meshes[solver.name]
+                    is_other_solver_receiving_mesh = mesh in config.solver_receive_meshes[other_solver_for_coupling.name]
+                    is_solver_receiving_mesh = mesh in config.solver_receive_meshes[solver.name]
+                    is_other_solver_providing_mesh = mesh in config.solver_provide_meshes[other_solver_for_coupling.name]
 
                     # Check if meshes are provided/received in complementary ways
                     if (is_solver_providing_mesh and is_other_solver_receiving_mesh) or \

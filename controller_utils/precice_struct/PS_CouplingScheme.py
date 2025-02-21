@@ -109,9 +109,6 @@ class PS_CouplingScheme(object):
             if coupled_mesh_name is None:
                 print("No coupled mesh found for quantity " + q_name + " between solvers " + solver.name + " and " + other_solver_for_coupling.name)
             
-            print(solver.name + " reads: " + str([q.instance_name for q in solver.quantities_read.values()]))
-            print(solver.name + " writes: " + str([q.instance_name for q in solver.quantities_write.values()]))
-            
 
             print(solver.name + " provides: " + str([m for m in solver.meshes if self.is_mesh_provided(solver, m)]))
             print(solver.name + " receives: " + str([m for m in solver.meshes if self.is_mesh_received(solver, m)]))
@@ -157,16 +154,25 @@ class PS_CouplingScheme(object):
     def is_mesh_provided(self, solver, mesh_name):
         """
         Determine if a mesh is provided by the solver.
-        A mesh is considered provided if it's in the solver's meshes list 
-        and is not received from another solver.
+        A mesh is considered provided if:
+        1. It's used as a mesh for write quantities, OR
+        2. It's the solver's own mesh and not received from another solver
         """
         # Check if the mesh is in the solver's meshes
         if mesh_name not in solver.meshes:
             return False
         
-        # Check if this mesh is used as a source mesh for any read quantities
-        for q_name in solver.quantities_read.values():
-            if q_name.source_mesh_name == mesh_name:
+        # Check if this mesh is used for writing quantities
+        for q_name in solver.quantities_write:
+            q = solver.quantities_write[q_name]
+            if q.source_mesh_name == mesh_name:
+                return True
+        
+        # Check if this mesh is received from another solver
+        used_meshes = {}
+        for q_name in solver.quantities_read:
+            q = solver.quantities_read[q_name]
+            if q.source_mesh_name == mesh_name and q.source_mesh_name not in used_meshes:
                 return False
         
         return True
@@ -174,10 +180,22 @@ class PS_CouplingScheme(object):
     def is_mesh_received(self, solver, mesh_name):
         """
         Determine if a mesh is received by the solver from another solver.
-        A mesh is considered received if it's used as a source mesh for read quantities.
+        A mesh is considered received if:
+        1. It's used as a source mesh for read quantities with consistent mapping
         """
-        for q_name in solver.quantities_read.values():
-            if q_name.source_mesh_name == mesh_name:
+        # Check if the mesh is in the solver's meshes
+        if mesh_name not in solver.meshes:
+            return False
+        
+        # Track used meshes to avoid duplicates
+        used_meshes = {}
+        
+        # Check read quantities
+        for q_name in solver.quantities_read:
+            q = solver.quantities_read[q_name]
+            # Check if this is a consistent read mapping
+            if q.source_mesh_name == mesh_name and q.is_consistent and q.source_mesh_name not in used_meshes:
+                used_meshes[q.source_mesh_name] = 1
                 return True
         
         return False

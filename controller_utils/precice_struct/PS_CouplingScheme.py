@@ -100,13 +100,32 @@ class PS_CouplingScheme(object):
             solver_mesh_names = list(solver.meshes.keys())
             other_solver_mesh_names = list(other_solver_for_coupling.meshes.keys())
 
-            print("Current solver " + solver.name + " meshes: " + str(solver_mesh_names))
-            print("Other solver " + other_solver_for_coupling.name + " meshes: " + str(other_solver_mesh_names))
+            #print("Current solver " + solver.name + " meshes: " + str(solver_mesh_names))
+            #print("Other solver " + other_solver_for_coupling.name + " meshes: " + str(other_solver_mesh_names))
+
+            # Get all source meshes from quantities
+            solver_source_meshes = set()
+            for q_name in solver.quantities_read:
+                q = solver.quantities_read[q_name]
+                solver_source_meshes.add(q.source_mesh_name)
+            for q_name in solver.quantities_write:
+                q = solver.quantities_write[q_name]
+                solver_source_meshes.add(q.source_mesh_name)
+
+            other_solver_source_meshes = set()
+            for q_name in other_solver_for_coupling.quantities_read:
+                q = other_solver_for_coupling.quantities_read[q_name]
+                other_solver_source_meshes.add(q.source_mesh_name)
+            for q_name in other_solver_for_coupling.quantities_write:
+                q = other_solver_for_coupling.quantities_write[q_name]
+                other_solver_source_meshes.add(q.source_mesh_name)
+
+            print("Current solver " + solver.name + " source meshes: " + str(solver_source_meshes))
+            print("Other solver " + other_solver_for_coupling.name + " source meshes: " + str(other_solver_source_meshes))
 
             for mesh in solver_mesh_names:
-                print("Current mesh: " + mesh)
                 # Check if this mesh is shared by both solvers
-                if mesh in other_solver_mesh_names:
+                if mesh in other_solver_source_meshes:
                     # Use the provide and receive meshes from the config
                     is_solver_providing_mesh = mesh in config.solver_provide_meshes[solver.name]
                     is_other_solver_receiving_mesh = mesh in config.solver_receive_meshes[other_solver_for_coupling.name]

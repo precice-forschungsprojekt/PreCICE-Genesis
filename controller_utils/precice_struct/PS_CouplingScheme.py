@@ -94,16 +94,27 @@ class PS_CouplingScheme(object):
                             other_mesh_name = allm
 
             # the from and to attributes
-            from_s = solver.name
-            to_s = other_solver_for_coupling.name
-            exchange_mesh_name = other_mesh_name if solver.name == simple_solver.name else q.source_mesh_name
+            from_s = "___"
+            to_s = "__"
+            exchange_mesh_name = q.source_mesh_name
+            if solver.name != simple_solver.name:
+                from_s = solver.name
+                to_s = simple_solver.name
+                exchange_mesh_name = other_mesh_name
+            else:
+                from_s = solver.name
+                to_s = other_solver_for_coupling.name
 
-            e = etree.SubElement(coupling_scheme, "exchange", data=q_name, mesh=exchange_mesh_name,
-                                from___=from_s, to=to_s)
-
+            # TODO: the mesh must be the coupled mesh that both participant have
+            # print (" size =" , len( q.list_of_solvers ) )
+            e = etree.SubElement(coupling_scheme, "exchange", data=q_name, mesh=exchange_mesh_name
+                                 ,from___ = from_s, to=to_s)
+            # TODO: here the oposite from above
             if relative_conv_str != "":
                 c = etree.SubElement(coupling_scheme, "relative-convergence-measure",
-                                    limit=relative_conv_str, mesh=exchange_mesh_name, data=q_name)
+                                 limit=relative_conv_str, mesh=exchange_mesh_name
+                                 ,data=q_name)
+            pass
 
 
 class PS_ExplicitCoupling(PS_CouplingScheme):

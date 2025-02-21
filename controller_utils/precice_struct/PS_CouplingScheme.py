@@ -151,55 +151,6 @@ class PS_CouplingScheme(object):
                                  ,data=q_name)
             pass
 
-    def is_mesh_provided(self, solver, mesh_name):
-        """
-        Determine if a mesh is provided by the solver.
-        A mesh is considered provided if:
-        1. It's used as a mesh for write quantities, OR
-        2. It's the solver's own mesh and not received from another solver
-        """
-        # Check if the mesh is in the solver's meshes
-        if mesh_name not in solver.meshes:
-            return False
-        
-        # Check if this mesh is used for writing quantities
-        for q_name in solver.quantities_write:
-            q = solver.quantities_write[q_name]
-            if q.source_mesh_name == mesh_name:
-                return True
-        
-        # Check if this mesh is received from another solver
-        used_meshes = {}
-        for q_name in solver.quantities_read:
-            q = solver.quantities_read[q_name]
-            if q.source_mesh_name == mesh_name and q.source_mesh_name not in used_meshes:
-                return False
-        
-        return True
-
-    def is_mesh_received(self, solver, mesh_name):
-        """
-        Determine if a mesh is received by the solver from another solver.
-        A mesh is considered received if:
-        1. It's used as a source mesh for read quantities with consistent mapping
-        """
-        # Check if the mesh is in the solver's meshes
-        if mesh_name not in solver.meshes:
-            return False
-        
-        # Track used meshes to avoid duplicates
-        used_meshes = {}
-        
-        # Check read quantities
-        for q_name in solver.quantities_read:
-            q = solver.quantities_read[q_name]
-            # Check if this is a consistent read mapping
-            if q.source_mesh_name == mesh_name and q.is_consistent and q.source_mesh_name not in used_meshes:
-                used_meshes[q.source_mesh_name] = 1
-                return True
-        
-        return False
-
 
 class PS_ExplicitCoupling(PS_CouplingScheme):
     """ Explicit coupling scheme """

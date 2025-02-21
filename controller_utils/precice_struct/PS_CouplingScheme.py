@@ -96,24 +96,43 @@ class PS_CouplingScheme(object):
             # Determine the coupled mesh that both participants share
             coupled_mesh_name = None
             for mesh in solver.meshes:
-                # Check if this mesh is a potential coupled mesh
+                # Check if this mesh is shared by both solvers
                 if mesh in other_solver_for_coupling.meshes:
-                    # Verify the mesh status for both solvers
-                    if (self.is_mesh_provided(solver, mesh) and 
-                        self.is_mesh_received(other_solver_for_coupling, mesh)) or \
-                       (self.is_mesh_received(solver, mesh) and 
-                        self.is_mesh_provided(other_solver_for_coupling, mesh)):
+                    # Directly check mesh provide/receive status using internal data structures
+                    is_solver_providing_mesh = any(
+                        q.source_mesh_name == mesh 
+                        for q in solver.quantities_write.values() 
+                        if q.source_solver == solver
+                    )
+                    is_other_solver_receiving_mesh = any(
+                        q.source_mesh_name == mesh 
+                        for q in other_solver_for_coupling.quantities_read.values() 
+                        if q.source_solver == solver
+                    )
+                    is_solver_receiving_mesh = any(
+                        q.source_mesh_name == mesh 
+                        for q in solver.quantities_read.values() 
+                        if q.source_solver == other_solver_for_coupling
+                    )
+                    is_other_solver_providing_mesh = any(
+                        q.source_mesh_name == mesh 
+                        for q in other_solver_for_coupling.quantities_write.values() 
+                        if q.source_solver == other_solver_for_coupling
+                    )
+
+                    # Check if meshes are provided/received in complementary ways
+                    if (is_solver_providing_mesh and is_other_solver_receiving_mesh) or \
+                       (is_solver_receiving_mesh and is_other_solver_providing_mesh):
                         coupled_mesh_name = mesh
                         break
 
             if coupled_mesh_name is None:
                 print("No coupled mesh found for quantity " + q_name + " between solvers " + solver.name + " and " + other_solver_for_coupling.name)
-            
 
-            print(solver.name + " provides: " + str([m for m in solver.meshes if self.is_mesh_provided(solver, m)]))
-            print(solver.name + " receives: " + str([m for m in solver.meshes if self.is_mesh_received(solver, m)]))
-            print(other_solver_for_coupling.name + " provides: " + str([m for m in other_solver_for_coupling.meshes if self.is_mesh_provided(other_solver_for_coupling, m)]))
-            print(other_solver_for_coupling.name + " receives: " + str([m for m in other_solver_for_coupling.meshes if self.is_mesh_received(other_solver_for_coupling, m)]))
+            print(solver.name + " provides: " + str([q.source_mesh_name for q in solver.quantities_write.values() if q.source_solver == solver]))
+            print(solver.name + " receives: " + str([q.source_mesh_name for q in solver.quantities_read.values() if q.source_solver != solver]))
+            print(other_solver_for_coupling.name + " provides: " + str([q.source_mesh_name for q in other_solver_for_coupling.quantities_write.values() if q.source_solver == other_solver_for_coupling]))
+            print(other_solver_for_coupling.name + " receives: " + str([q.source_mesh_name for q in other_solver_for_coupling.quantities_read.values() if q.source_solver != other_solver_for_coupling]))
 
 
             # the from and to attributes

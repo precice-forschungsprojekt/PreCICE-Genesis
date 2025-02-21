@@ -93,26 +93,46 @@ class PS_CouplingScheme(object):
                         if allm != q.source_mesh_name:
                             other_mesh_name = allm
 
+            # Determine the coupled mesh that both participants share
+            coupled_mesh_name = None
+            for mesh in solver.meshes:
+                # Check if this mesh is a potential coupled mesh
+                if mesh in other_solver_for_coupling.meshes:
+                    # Verify the mesh status for both solvers
+                    if (self.is_mesh_provided(solver, mesh) and 
+                        self.is_mesh_received(other_solver_for_coupling, mesh)) or \
+                       (self.is_mesh_received(solver, mesh) and 
+                        self.is_mesh_provided(other_solver_for_coupling, mesh)):
+                        coupled_mesh_name = mesh
+                        break
+
+            if coupled_mesh_name is None:
+                print("No coupled mesh found for quantity " + q_name + " between solvers " + solver.name + " and " + other_solver_for_coupling.name)
+            
             # the from and to attributes
             from_s = "___"
             to_s = "__"
             exchange_mesh_name = q.source_mesh_name
             
-            # Determine the coupled mesh that both participants share
-            coupled_mesh_name = None
-            for mesh in solver.meshes:
-                if mesh in other_solver_for_coupling.meshes:
-                    coupled_mesh_name = mesh
-                    break
-            
-            if solver.name != simple_solver.name:
-                from_s = solver.name
-                to_s = simple_solver.name
-                exchange_mesh_name = coupled_mesh_name or other_mesh_name
+            if coupled_mesh_name:
+                print("########################################")
+                if solver.name != simple_solver.name:
+                    from_s = solver.name
+                    to_s = simple_solver.name
+                    exchange_mesh_name = coupled_mesh_name
+                else:
+                    from_s = solver.name
+                    to_s = other_solver_for_coupling.name
+                    exchange_mesh_name = coupled_mesh_name or q.source_mesh_name
             else:
-                from_s = solver.name
-                to_s = other_solver_for_coupling.name
-                exchange_mesh_name = coupled_mesh_name or q.source_mesh_name
+                if solver.name != simple_solver.name:
+                    from_s = solver.name
+                    to_s = simple_solver.name
+                    exchange_mesh_name = other_mesh_name
+                else:
+                    from_s = solver.name
+                    to_s = other_solver_for_coupling.name
+                    exchange_mesh_name = q.source_mesh_name
 
             e = etree.SubElement(coupling_scheme, "exchange", data=q_name, mesh=exchange_mesh_name
                                  ,from___ = from_s, to=to_s)

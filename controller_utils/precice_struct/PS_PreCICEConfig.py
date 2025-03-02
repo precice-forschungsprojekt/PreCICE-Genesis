@@ -213,6 +213,7 @@ class PS_PreCICEConfig(object):
         self.solver_receive_meshes = {}
 
         # 3 participants
+        m2n_pairs_added = set()
         for solver_name in self.solvers:
             solver = self.solvers[solver_name]
             solver_tag = etree.SubElement(precice_configuration_tag,
@@ -309,10 +310,17 @@ class PS_PreCICEConfig(object):
                     pass
                 # treat M2N communications with other solver
                 for other_solver_name in list_of_solvers_with_higher_complexity:
-                    other_solver = list_of_solvers_with_higher_complexity[other_solver_name]
+                    if solver_name == other_solver_name:
+                        continue
                     # we also add the M2N construct that is mandatory for the configuration
-                    m2n_tag = etree.SubElement( precice_configuration_tag, "m2n:sockets", acceptor = solver_name,
-                                                connector = other_solver_name, exchange___directory = "..")
+                    # Check if this pair or its reverse has already been added
+                    m2n_pair = tuple(sorted([solver_name, other_solver_name]))
+                    if m2n_pair not in m2n_pairs_added:
+                        m2n_tag = etree.SubElement(precice_configuration_tag, "m2n:sockets", 
+                                                   acceptor=solver_name, 
+                                                   connector=other_solver_name, 
+                                                   exchange___directory="..")
+                        m2n_pairs_added.add(m2n_pair)
                 pass
 
         # 4 coupling scheme

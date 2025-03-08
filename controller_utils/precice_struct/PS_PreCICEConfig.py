@@ -119,9 +119,22 @@ class PS_PreCICEConfig(object):
             participant2_solver = self.solvers[participant2_name]
             max_coupling_value = min(max_coupling_value, coupling.coupling_type.value)
 
+            temp_d = {}
+            data_forward = ""
+            data_backward = ""
+
+            for d in self.exchanges:
+                if d["from"] == participant1_name and d["to"] == participant2_name:
+                    temp_d = d
+                    data_forward = d["data"]
+                if d["to"] == participant1_name and d["from"] == participant2_name:
+                    temp_d = d
+                    data_backward = d["data"]
+
             # ========== FSI =========
             if coupling.coupling_type == UI_CouplingType.fsi:
                 # VERY IMPORTANT: we rely here on the fact that the participants are sorted alphabetically
+                print("HIT 1")
                 participant1_solver.make_participant_fsi_fluid(
                     self, coupling.boundaryC1, coupling.boundaryC2, participant2_solver.name )
                 participant2_solver.make_participant_fsi_structure(
@@ -129,6 +142,7 @@ class PS_PreCICEConfig(object):
                 pass
             # ========== F2S =========
             if coupling.coupling_type == UI_CouplingType.f2s:
+                print("HIT 2")
                 # VERY IMPORTANT: we rely here on the fact that the participants are sorted alphabetically
                 participant1_solver.make_participant_f2s_fluid(
                     self, coupling.boundaryC1, coupling.boundaryC2, participant2_solver.name )
@@ -138,10 +152,12 @@ class PS_PreCICEConfig(object):
             # ========== CHT =========
             if coupling.coupling_type == UI_CouplingType.cht:
                 # VERY IMPORTANT: we rely here on the fact that the participants are sorted alphabetically
+                print("PART 1: ", participant1_name)
+                print("PART 2: ", participant2_name)
                 participant1_solver.make_participant_cht_fluid(
-                    self, coupling.boundaryC1, coupling.boundaryC2, participant2_solver.name )
+                    self, coupling.boundaryC1, coupling.boundaryC2, participant2_solver.name, data_forward, data_backward)
                 participant2_solver.make_participant_cht_structure(
-                    self, coupling.boundaryC1, coupling.boundaryC2, participant1_solver.name)
+                    self, coupling.boundaryC1, coupling.boundaryC2, participant1_solver.name, data_forward, data_backward)
                 pass
             pass
 

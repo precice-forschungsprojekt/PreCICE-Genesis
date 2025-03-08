@@ -1,0 +1,27 @@
+﻿coupling-scheme:
+    max-time: 1.0
+    time-window-size: 0.01
+    relative-accuracy: 1.0e-5
+    max-iterations: 30
+
+participants:
+    Fluid: 
+        solver: OpenFOAM
+        dimensionality: 2
+    Solid: 
+        solver: FEniCS
+        dimensionality: 2
+
+exchanges:
+    - from: Solid
+      from-mesh: Solid-Mesh
+      to: Fluid
+      to-mesh: Fluid-Mesh
+      data: Heat-Flux
+      type: strong
+    - from: Fluid
+      from-mesh: Fluid-Mesh
+      to: Solid
+      to-mesh: Solid-Mesh-nodes
+      data: Temperature
+      type: strong
